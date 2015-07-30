@@ -1,6 +1,7 @@
 # mathjax-component-builder
 
-A simple script to populate the [mathjax components repo]().
+A simple script to populate the
+[mathjax components repo](https://github.com/minrk/components-mathjax).
 This clones [MathJax][] and the [MathJax-grunt-cleaner][] repos,
 then iterates through each MathJax release tag,
 making a corresponding tag on the component repo after running the `grunt component`
