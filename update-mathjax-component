@@ -1,0 +1,128 @@
+#!/usr/bin/env ruby
+# This script clones the MathJax and MathJax-grunt-cleaner repos,
+# and runs the `grunt component` command to take all the tags on the main repo
+# and make new tags on the components repo with the image fonts removed.
+# Pre-existing tags will not be updated.
+
+# FIXME: update to mathjax/MathJax-grunt-cleaner when 
+$cleaner_repo = 'https://github.com/minrk/MathJax-grunt-cleaner'
+$mathjax_repo = 'https://github.com/mathjax/MathJax'
+# FIXME: update to proper components remote when it exists
+$component_repo = 'git@github.com:minrk/components-mathjax'
+
+
+def run(cmd)
+  # echo and run a command, exit on failure
+  puts "> #{cmd}"
+  if not system(cmd)
+    STDERR.write("#{cmd} failed")
+    Process.exit(1)
+  end
+end
+
+def clone_repos(mj_path, cleaner_path)
+  # Clone various repos (cleaner, mathjax, and add components remote to mathjax)
+  
+  cleaner_path = File.absolute_path(cleaner_path)
+  mj_path = File.absolute_path(mj_path)
+  
+  if not File.exists? cleaner_path
+    # FIXME: remove `-b component` when PR#5 is merged
+    run "git clone #{$cleaner_repo} -b component #{cleaner_path}"
+    Dir.chdir cleaner_path do
+      run "npm install"
+    end
+  end
+  
+  if not File.exists? mj_path
+    run "git clone #{$mathjax_repo} #{mj_path}"
+    Dir.chdir mj_path do
+      clear_tags
+    end
+  end
+
+  Dir.chdir mj_path do
+    run "git fetch origin --no-tags"
+
+    remotes = `git remote`.split
+    if not remotes.include? 'component'
+      run "git remote add component #{$component_repo}"
+    end
+    run "git fetch component --no-tags"
+  end
+  
+  ['Gruntfile.js', 'node_modules', 'package.json'].each do |f|
+    mj_file = File.join(mj_path, f)
+    cleaner_file = File.join(cleaner_path, f)
+    if not File.exists? mj_file
+      puts "Symlinking #{mj_file} → #{cleaner_file}"
+      File.symlink(cleaner_file, mj_file)
+    end
+  end
+  mj_path
+end
+
+
+def get_tags(remote)
+  # get tags from a particular remote
+  tags = {}
+  `git ls-remote --tags #{remote}`.split("\n").each do |line|
+    sha, ref = line.split
+    if ref.include? '^'
+      next
+    end
+    tag = ref.slice('refs/tags/'.length, ref.length)
+    tags[tag] = sha
+  end
+  tags
+end
+
+
+def clear_tags
+  # Clear the local tags
+  tags = `git tag`.strip.gsub("\n", " ")
+  if not tags.empty?
+    run "git tag -d #{tags}"
+  end
+end
+
+
+def make_component_tag(tag, sha)
+  # make a component tag from an origin tag
+  puts "Making component tag #{tag}"
+  run "git checkout #{sha}"
+  run "grunt component"
+  run "git add unpacked fonts"
+  run "git commit -m 'strip png-fonts for component release #{tag}'"
+  run "git tag -f -am 'component tag #{tag}' #{tag}"
+end
+
+
+def migrate_tags()
+  # migrate tags from origin to component repo
+  # running Grunt task to strip png image fonts on each
+  origin_tags = get_tags "origin"
+  component_tags = get_tags "component"
+  
+  # filter out existing tags on component repo
+  component_tags.keys.each do |tag|
+    origin_tags.delete(tag)
+  end
+  
+  if origin_tags.empty?
+    puts "All tags up-to-date"
+    return
+  end
+  
+  origin_tags.each_pair do |tag, sha|
+    make_component_tag(tag, sha)
+  end
+  run "git push component --tags"
+end
+
+
+# actually do it:
+mj = clone_repos('mathjax', 'mathjax-cleaner')
+Dir.chdir mj do
+  migrate_tags
+end
