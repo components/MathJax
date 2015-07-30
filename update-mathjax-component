@@ -35,20 +35,17 @@ def clone_repos(mj_path, cleaner_path)
   end
   
   if not File.exists? mj_path
-    run "git clone #{$mathjax_repo} #{mj_path}"
-    Dir.chdir mj_path do
-      clear_tags
-    end
+    run "git clone #{$component_repo} -o component #{mj_path}"
   end
 
   Dir.chdir mj_path do
-    run "git fetch origin --no-tags"
+    run "git fetch component"
 
     remotes = `git remote`.split
-    if not remotes.include? 'component'
-      run "git remote add component #{$component_repo}"
+    if not remotes.include? 'upstream'
+      run "git remote add upstream #{$mathjax_repo}"
     end
-    run "git fetch component --no-tags"
+    run "git fetch upstream"
   end
   
   ['Gruntfile.js', 'node_modules', 'package.json'].each do |f|
@@ -88,7 +85,7 @@ end
 
 
 def make_component_tag(tag, sha)
-  # make a component tag from an origin tag
+  # make a component tag from an upstream tag
   puts "Making component tag #{tag}"
   run "git checkout #{sha}"
   run "grunt component"
@@ -99,22 +96,22 @@ end
 
 
 def migrate_tags()
-  # migrate tags from origin to component repo
+  # migrate tags from upstream to component repo
   # running Grunt task to strip png image fonts on each
-  origin_tags = get_tags "origin"
+  upstream_tags = get_tags "upstream"
   component_tags = get_tags "component"
   
   # filter out existing tags on component repo
   component_tags.keys.each do |tag|
-    origin_tags.delete(tag)
+    upstream_tags.delete(tag)
   end
   
-  if origin_tags.empty?
+  if upstream_tags.empty?
     puts "All tags up-to-date"
     return
   end
   
-  origin_tags.each_pair do |tag, sha|
+  upstream_tags.each_pair do |tag, sha|
     make_component_tag(tag, sha)
   end
   run "git push component --tags"
