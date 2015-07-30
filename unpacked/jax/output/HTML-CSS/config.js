@@ -40,7 +40,7 @@ MathJax.OutputJax["HTML-CSS"] = MathJax.OutputJax({
     availableFonts: ["STIX","TeX"], // list of local fonts to check for
     preferredFont: "TeX",           // preferred local font (TeX or STIX)
     webFont: "TeX",                 // web-based font to use when no local fonts found (TeX is only choice)
-    imageFont: "TeX",               // font to use for image fallback mode (TeX is only choice)
+    imageFont: null,               // font to use for image fallback mode (TeX is only choice)
     undefinedFamily: "STIXGeneral,'Arial Unicode MS',serif", // fonts to use for unknown unicode characters
     mtextFontInherit: false,        // to make <mtext> be in page font rather than MathJax font
 
