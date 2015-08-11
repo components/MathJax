@@ -4,11 +4,9 @@
 # and make new tags on the components repo with the image fonts removed.
 # Pre-existing tags will not be updated.
 
-# FIXME: update to mathjax/MathJax-grunt-cleaner when 
-$cleaner_repo = 'https://github.com/minrk/MathJax-grunt-cleaner'
+$cleaner_repo = 'https://github.com/mathjax/MathJax-grunt-cleaner'
 $mathjax_repo = 'https://github.com/mathjax/MathJax'
-# FIXME: update to proper components remote when it exists
-$component_repo = 'git@github.com:minrk/components-mathjax'
+$component_repo = 'git@github.com:components/MathJax'
 
 
 def run(cmd)
@@ -27,8 +25,7 @@ def clone_repos(mj_path, cleaner_path)
   mj_path = File.absolute_path(mj_path)
   
   if not File.exists? cleaner_path
-    # FIXME: remove `-b component` when PR#5 is merged
-    run "git clone #{$cleaner_repo} -b component #{cleaner_path}"
+    run "git clone #{$cleaner_repo} #{cleaner_path}"
     Dir.chdir cleaner_path do
       run "npm install"
     end
