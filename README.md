@@ -1,6 +1,10 @@
-# mathjax-component-builder
+# MathJax Component
 
-A simple script to populate the
+This is the MathJax components repo. It contains releases of mathjax,
+with the png image fonts removed, since they are often unused,
+and take up a large portion of MathJax install size and time.
+
+The master branch of this repo contains a simple script to update the
 [mathjax components repo](https://github.com/components/MathJax).
 This clones [MathJax][] and the [MathJax-grunt-cleaner][] repos,
 then iterates through each MathJax release tag,
@@ -8,7 +12,7 @@ making a corresponding tag on the component repo after running the `grunt compon
 command, which strips out the png image fonts.
 Any tags already present on the components repo are not updated.
 
-To use:
+To update the tags on the components repo when a new MathJax release has been made, run:
 
     ./update-mathjax-component
 
