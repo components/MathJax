@@ -44,7 +44,12 @@ def clone_repos(mj_path, cleaner_path)
     end
     run "git fetch upstream"
   end
-  
+
+  [mj_path, cleaner_path]
+end
+
+def link_files(mj_path, cleaner_path)
+  # link build files 
   ['Gruntfile.js', 'node_modules', 'package.json'].each do |f|
     mj_file = File.join(mj_path, f)
     cleaner_file = File.join(cleaner_path, f)
@@ -53,9 +58,7 @@ def clone_repos(mj_path, cleaner_path)
       File.symlink(cleaner_file, mj_file)
     end
   end
-  mj_path
 end
-
 
 def get_tags(remote)
   # get tags from a particular remote
@@ -81,10 +84,12 @@ def clear_tags
 end
 
 
-def make_component_tag(tag, sha)
+def make_component_tag(tag, sha, mj_path, cleaner_path)
   # make a component tag from an upstream tag
   puts "Making component tag #{tag}"
+  run "git reset --hard"
   run "git checkout #{sha}"
+  link_files(mj_path, cleaner_path)
   run "grunt component"
   run "git add unpacked fonts"
   run "git commit -m 'strip png-fonts for component release #{tag}'"
@@ -92,7 +97,7 @@ def make_component_tag(tag, sha)
 end
 
 
-def migrate_tags()
+def migrate_tags(mj_path, cleaner_path)
   # migrate tags from upstream to component repo
   # running Grunt task to strip png image fonts on each
   upstream_tags = get_tags "upstream"
@@ -109,14 +114,14 @@ def migrate_tags()
   end
   
   upstream_tags.each_pair do |tag, sha|
-    make_component_tag(tag, sha)
+    make_component_tag(tag, sha, mj_path, cleaner_path)
   end
   run "git push component --tags"
 end
 
 
 # actually do it:
-mj = clone_repos('mathjax', 'mathjax-cleaner')
+mj, cleaner = clone_repos('mathjax', 'mathjax-cleaner')
 Dir.chdir mj do
-  migrate_tags
+  migrate_tags(mj, cleaner)
 end
