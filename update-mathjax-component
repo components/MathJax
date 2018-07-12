@@ -65,7 +65,7 @@ def get_tags(remote)
   tags = {}
   `git ls-remote --tags #{remote}`.split("\n").each do |line|
     sha, ref = line.split
-    if ref.include? '^'
+    if ref.include? '^' or ref.include? '-'
       next
     end
     tag = ref.slice('refs/tags/'.length, ref.length)
@@ -102,21 +102,24 @@ def migrate_tags(mj_path, cleaner_path)
   # running Grunt task to strip png image fonts on each
   upstream_tags = get_tags "upstream"
   component_tags = get_tags "component"
-  
+
   # filter out existing tags on component repo
   component_tags.keys.each do |tag|
     upstream_tags.delete(tag)
   end
-  
+
   if upstream_tags.empty?
     puts "All tags up-to-date"
     return
   end
-  
+
+  to_push = []
   upstream_tags.each_pair do |tag, sha|
     make_component_tag(tag, sha, mj_path, cleaner_path)
+    to_push.push(tag)
   end
-  run "git push component --tags"
+
+  run "git push component " + tags.join(" ")
 end
 
 
