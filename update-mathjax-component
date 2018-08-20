@@ -119,7 +119,7 @@ def migrate_tags(mj_path, cleaner_path)
     to_push.push(tag)
   end
 
-  run "git push component " + tags.join(" ")
+  run "git push component " + to_push.join(" ")
 end
 
 
